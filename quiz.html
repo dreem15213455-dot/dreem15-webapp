@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contest Quiz - Dreem15</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            width: 95%;
+            padding: 25px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        h1 {
+            color: #ff0000;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ff0000;
+            padding-bottom: 10px;
+        }
+
+        /* Timer Bar Styling (10 Second) */
+        .timer-container {
+            height: 12px;
+            background-color: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        #timer-bar {
+            height: 100%;
+            width: 100%;
+            background-color: #5cb85c; /* Green */
+            transition: width 1s linear;
+        }
+        .timer-text {
+            position: absolute;
+            top: -25px;
+            right: 0;
+            font-weight: bold;
+            color: #ff0000;
+            font-size: 1.1em;
+        }
+
+        /* Question and Options */
+        #quiz-container {
+            /* Display is controlled by JS */
+        }
+        .question-text {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+            min-height: 50px; /* To prevent layout jump */
+            line-height: 1.4;
+        }
+        .option-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 12px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .option-button:hover:not(.disabled) {
+            background-color: #e2e6ea;
+        }
+        .option-button.disabled {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        
+        /* UI Feedback Colors */
+        .correct-answer { background-color: #d4edda !important; border-color: #c3e6cb !important; font-weight: bold; }
+        .wrong-answer { background-color: #f8d7da !important; border-color: #f5c6cb !important; }
+        .selected-answer { background-color: #cce7ff !important; border-color: #007bff !important; }
+
+        /* Status Messages */
+        #status-message {
+            text-align: center;
+            padding: 30px;
+            border: 2px solid #ffc107;
+            background-color: #fff3cd;
+            color: #856404;
+            border-radius: 8px;
+        }
+
+        /* Confirmation Popup */
+        .confirmation-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .popup-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0,0,0,0.7);
+            max-width: 90%;
+            width: 400px;
+        }
+        .popup-content h2 {
+            color: #ff0000;
+            margin-bottom: 15px;
+        }
+        .popup-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        .popup-content button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .confirm-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .confirm-btn:hover {
+            background-color: #218838;
+        }
+        .cancel-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .cancel-btn:hover {
+            background-color: #c82333;
+        }
+        
+        /* Final Popup Styling */
+        .submit-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        #progress-text {
+            font-weight: bold;
+            color: #ff0000;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.1em;
+        }
+
+        /* Congratulations Styling */
+        .congratulations {
+            text-align: center;
+            padding: 20px;
+        }
+        .congratulations i {
+            font-size: 4rem;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        .congratulations h2 {
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+        .result-date {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="contest-title">Contest Quiz</h1>
+        
+        <div id="status-message" style="display: none;">
+            </div>
+
+        <div id="quiz-container" style="display: none;">
+            
+            <div id="progress-text">Loading...</div>
+            
+            <div class="timer-container">
+                <div class="timer-text" id="timer-text">10s</div>
+                <div id="timer-bar"></div>
+            </div>
+
+            <p class="question-text" id="question-text">Loading question...</p>
+            <div id="options-container">
+                </div>
+        </div>
+    </div>
+    
+    <!-- Confirmation Popup -->
+    <div id="confirmation-popup" class="confirmation-popup" style="display: none;">
+        <div class="popup-content">
+            <i class="fas fa-play-circle" style="font-size: 3rem; color: #ff0000; margin-bottom: 15px;"></i>
+            <h2>Start Quiz?</h2>
+            <p><strong id="contest-name-display"></strong></p>
+            <p>आपके पास प्रत्येक प्रश्न के लिए <strong style="color: #ff0000;">10 सेकंड</strong> होंगे।</p>
+            <p>एक बार शुरू करने के बाद आप रोक नहीं सकते!</p>
+            <div class="popup-buttons">
+                <button class="cancel-btn" onclick="cancelQuiz()">Cancel</button>
+                <button class="confirm-btn" onclick="startQuiz()">Start Quiz</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Final Congratulations Popup -->
+    <div id="congratulations-popup" class="submit-popup" style="display: none;">
+        <div class="popup-content">
+            <div class="congratulations">
+                <i class="fas fa-trophy"></i>
+                <h2>Congratulations! 🎉</h2>
+                <p>आपने सफलतापूर्वक क्विज़ पूरा कर लिया है!</p>
+                <div class="result-date">
+                    <i class="fas fa-calendar-alt"></i>
+                    <p><strong>परिणाम की घोषणा:</strong></p>
+                    <p id="result-date-display" style="font-size: 1.2em; color: #ff0000; font-weight: bold;"></p>
+                </div>
+                <button onclick="redirectToHome()" style="background: #ff0000; color: white; border: none; padding: 12px 30px; border-radius: 5px; cursor: pointer; font-size: 1.1em; margin-top: 15px;">
+                    <i class="fas fa-home"></i> Home पर वापस जाएँ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration (Aapka diya hua)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBAfmc3i3AT0YDR9DprPb9m1x8xvqT6Cn8",
+            authDomain: "iqlevale.firebaseapp.com",
+            databaseURL: "https://iqlevale-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "iqlevale",
+            storageBucket: "iqlevale.firebasestorage.app",
+            messagingSenderId: "313766803659",
+            appId: "1:313766803659:web:381f8588450a91f2c7834e"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.database();
+        
+        const BASE_DB_PATH = "dreem15_data/";
+        
+        // Database Reference फंक्शन
+        function getDBRef(path) {
+            return db.ref(BASE_DB_PATH + path); 
+        }
+    </script>
+
+    <script>
+        // --- Configuration ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const CONTEST_ID = urlParams.get('contestId');
+        const CONTEST_NAME = urlParams.get('name') || 'Contest Quiz';
+        
+        document.getElementById('contest-title').textContent = CONTEST_NAME;
+        document.getElementById('contest-name-display').textContent = CONTEST_NAME;
+
+        const TIME_PER_QUESTION_SEC = 10; // 10 seconds per question
+        
+        // --- Global State ---
+        let currentQuestionIndex = -1;
+        let timerId;
+        let questionStartTime;
+        let totalScore = 0;
+        let totalTimeTaken = 0;
+        let drawDate = "Loading Draw Date..."; 
+        let questions = []; 
+        let timeLeft = TIME_PER_QUESTION_SEC;
+
+        // --- Point Calculation Logic (Speed Bonus & Penalty) ---
+        function calculateScore(isCorrect, timeTaken) {
+            const BASE_SCORE = 10;
+            const PENALTY = 10;
+            const SPEED_MULTIPLIER = 5; // हर सेकंड बचने पर 5 पॉइंट बोनस
+            
+            if (isCorrect) {
+                // समय को 0.1 से 10 सेकंड के बीच कैप करें
+                const effectiveTime = Math.min(Math.max(timeTaken, 0.1), TIME_PER_QUESTION_SEC); 
+                const speedBonus = (TIME_PER_QUESTION_SEC - effectiveTime) * SPEED_MULTIPLIER;
+                
+                return Math.round(BASE_SCORE + speedBonus);
+            } else {
+                return -PENALTY;
+            }
+        }
+
+        // --- Timer and Flow Logic ---
+
+        function updateTimerDisplay() {
+            const timerText = document.getElementById('timer-text');
+            const timerBar = document.getElementById('timer-bar');
+            
+            timerText.textContent = `${timeLeft}s`;
+            
+            // टाइमर के अनुसार कलर बदलना (Green -> Yellow -> Red)
+            if (timeLeft > 6) {
+                timerBar.style.backgroundColor = '#5cb85c'; // Green
+            } else if (timeLeft > 3) {
+                timerBar.style.backgroundColor = '#ffc107'; // Yellow
+            } else {
+                timerBar.style.backgroundColor = '#dc3545'; // Red
+            }
+        }
+
+        function startQuizTimer() {
+            document.querySelectorAll('.option-button').forEach(btn => btn.classList.remove('disabled'));
+            
+            clearInterval(timerId);
+            
+            timeLeft = TIME_PER_QUESTION_SEC;
+            questionStartTime = Date.now();
+            
+            updateTimerDisplay();
+            
+            // Timer bar animation
+            const timerBar = document.getElementById('timer-bar');
+            timerBar.style.width = '100%';
+            
+            timerId = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                const progress = (TIME_PER_QUESTION_SEC - timeLeft) / TIME_PER_QUESTION_SEC;
+                timerBar.style.width = `${100 - (progress * 100)}%`;
+                
+                if (timeLeft <= 0) {
+                    // 10 सेकंड खत्म (Time-out)
+                    clearInterval(timerId);
+                    recordAnswer(false, TIME_PER_QUESTION_SEC); 
+                    loadNextQuestion(true);
+                }
+            }, 1000);
+        }
+
+        function recordAnswer(isCorrect, timeTaken) {
+            const score = calculateScore(isCorrect, timeTaken);
+            totalScore += score;
+            totalTimeTaken += timeTaken;
+        }
+
+        /**
+         * यूज़र के क्लिक को हैंडल करता है। इंडेक्स-आधारित तुलना का उपयोग किया जाता है।
+         * @param {number} selectedOptionIndex - चुने गए ऑप्शन का 0-आधारित इंडेक्स।
+         * @param {number} answerIndex - सही जवाब का 0-आधारित इंडेक्स।
+         * @param {HTMLElement} targetElement - बटन एलिमेंट जिस पर क्लिक किया गया।
+         */
+        window.handleAnswerClick = function(selectedOptionIndex, answerIndex, targetElement) {
+            
+            clearInterval(timerId);
+
+            // सभी बटनों को डिसएबल करें
+            document.querySelectorAll('.option-button').forEach(btn => btn.classList.add('disabled'));
+
+            const timeTaken = (Date.now() - questionStartTime) / 1000;
+            const isCorrect = selectedOptionIndex === answerIndex; 
+            
+            recordAnswer(isCorrect, timeTaken);
+            
+            // UI Feedback - SIRF SELECTED ANSWER KO HIGHLIGHT KARENGE
+            targetElement.classList.add(isCorrect ? 'correct-answer' : 'wrong-answer');
+
+            // ❌❌❌ FIX 1: SAHI JAWAB KO HIGHLIGHT NAHI KARENGE ❌❌❌
+            // Sirf user ke selected answer ko highlight karenge
+            // Sahi jawab ko nahi dikhayenge
+
+            setTimeout(() => loadNextQuestion(false), 1500); // 1.5 सेकंड के बाद अगला प्रश्न
+        }
+
+        // Load next question or finish quiz
+        function loadNextQuestion(autoAdvance) {
+            currentQuestionIndex++;
+            
+            const progressText = document.getElementById('progress-text');
+            const TOTAL_QUESTIONS = questions.length; 
+
+            if (currentQuestionIndex < TOTAL_QUESTIONS) {
+                // नया प्रश्न लोड करें
+                const currentQ = questions[currentQuestionIndex];
+                
+                progressText.textContent = `प्रश्न ${currentQuestionIndex + 1} / ${TOTAL_QUESTIONS}`;
+                document.getElementById('question-text').textContent = currentQ.question;
+                
+                // सही जवाब का इंडेक्स ढूंढें (यह ज़रूरी है!)
+                const correctAnswerIndex = currentQ.options.indexOf(currentQ.answer);
+                
+                // यदि सही जवाब नहीं मिला (डेटाबेस एरर), तो अगले प्रश्न पर जाएँ
+                if (correctAnswerIndex === -1) {
+                    console.warn("Correct answer not found in options. Skipping question.");
+                    return loadNextQuestion(autoAdvance);
+                }
+
+                const optionsHTML = currentQ.options.map((opt, index) => 
+                    // handleAnswerClick में इंडेक्स (index) और सही जवाब का इंडेक्स (correctAnswerIndex) पास करें
+                    `<button class="option-button" onclick="handleAnswerClick(${index}, ${correctAnswerIndex}, this)">${opt}</button>`
+                ).join('');
+                document.getElementById('options-container').innerHTML = optionsHTML;
+
+                startQuizTimer(); // टाइमर फिर से शुरू करें
+            } else {
+                // क्विज़ समाप्त
+                progressText.textContent = `Submission...`;
+                finishQuiz(); 
+            }
+        }
+        
+        // --- Submission Logic ---
+
+        function finishQuiz() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const submissionTime = firebase.database.ServerValue.TIMESTAMP;
+            
+            document.getElementById('quiz-container').style.display = 'none';
+
+            // Pehle submission ID find karein jo is contest ke liye incomplete hai
+            getDBRef('submissions')
+                .orderByChild('contestId')
+                .equalTo(CONTEST_ID)
+                .once('value')
+                .then(snapshot => {
+                    let submissionKey = null;
+                    snapshot.forEach(sub => {
+                        const submission = sub.val();
+                        if (submission.userId === user.uid && submission.isCompleted === false) {
+                            submissionKey = sub.key;
+                        }
+                    });
+
+                    if (submissionKey) {
+                        // Existing submission ko update karein
+                        return getDBRef(`submissions/${submissionKey}`).update({
+                            totalScore: Math.round(totalScore),
+                            totalTime: totalTimeTaken,
+                            isCompleted: true,
+                            status: 'Completed',
+                            completedAt: submissionTime
+                        });
+                    } else {
+                        // Naya submission create karein
+                        return getDBRef('submissions').push().set({
+                            userId: user.uid,
+                            contestId: CONTEST_ID,
+                            totalScore: Math.round(totalScore),
+                            totalTime: totalTimeTaken,
+                            timestamp: submissionTime,
+                            isCompleted: true,
+                            status: 'Completed',
+                            userName: user.displayName || user.email
+                        });
+                    }
+                })
+                .then(() => {
+                    // Congratulations popup dikhayen
+                    document.getElementById('result-date-display').textContent = drawDate;
+                    document.getElementById('congratulations-popup').style.display = 'flex';
+
+                    // ✅✅✅ FIX 2: 3 SECONDS BAAD DIRECT HOME PAGE REDIRECT ✅✅✅
+                    setTimeout(() => {
+                        // Direct home page par redirect karenge - splash screen avoid karenge
+                        window.location.href = 'index.html#home';
+                    }, 3000);
+
+                })
+                .catch(error => {
+                    console.error("Error submitting quiz:", error);
+                    alert("Submission Error! Kripya dobara koshish karein. Error: " + error.message);
+                    redirectToHome(); 
+                });
+        }
+        
+        window.redirectToHome = function() {
+            // ✅✅✅ FIX 2: DIRECT HOME PAGE REDIRECT ✅✅✅
+            window.location.href = 'index.html#home'; 
+        }
+
+        window.cancelQuiz = function() {
+            // ✅✅✅ FIX 2: DIRECT HOME PAGE REDIRECT ✅✅✅
+            window.location.href = 'index.html#home';
+        }
+
+        window.startQuiz = function() {
+            // Confirmation popup हटाएं और quiz शुरू करें
+            document.getElementById('confirmation-popup').style.display = 'none';
+            document.getElementById('quiz-container').style.display = 'block';
+            loadNextQuestion(false);
+        }
+
+        // रियल प्रश्न लोड करना - FIXED VERSION
+        function loadRealQuestions(contestId, user) {
+            console.log("Loading questions for contest:", contestId);
+            
+            // Path: dreem15_data/questions/{contestId}
+            getDBRef('questions/' + contestId).once('value')
+                .then(snapshot => {
+                    if (snapshot.exists()) {
+                        const questionObject = snapshot.val();
+                        questions = Object.keys(questionObject).map(key => questionObject[key]);
+                        
+                        console.log("Raw questions loaded:", questions);
+                        
+                        // अमान्य (invalid) प्रश्नों को फ़िल्टर करें
+                        questions = questions.filter(q => {
+                            const isValid = q.options && q.options.length > 0 && q.answer;
+                            if (!isValid) {
+                                console.warn("Invalid question found:", q);
+                            }
+                            return isValid;
+                        });
+
+                        console.log("Valid questions after filtering:", questions);
+
+                        if (questions.length === 0) {
+                            throw new Error("No valid questions found for this contest.");
+                        }
+
+                        // Confirmation popup दिखाएं
+                        document.getElementById('confirmation-popup').style.display = 'flex';
+                        
+                    } else {
+                        throw new Error("No questions found for this contest.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching questions:", error);
+                    document.getElementById('status-message').innerHTML = `
+                        <h2><i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> Error</h2>
+                        <p>इस कॉन्टेस्ट के लिए कोई सवाल उपलब्ध नहीं है।</p>
+                        <p style="font-size: 0.9em; color: #666;">Error: ${error.message}</p>
+                        <button onclick="redirectToHome()" style="background: #ff0000; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px;">Home पर वापस जाएँ</button>
+                    `;
+                    document.getElementById('status-message').style.display = 'block';
+                    document.getElementById('quiz-container').style.display = 'none';
+                });
+        }
+
+
+        // --- Initialization ---
+        
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                // अगर यूज़र लॉगइन नहीं है, तो होम पर भेज दें
+                window.location.href = 'index.html#home'; 
+                return;
+            }
+            if (!CONTEST_ID) {
+                alert("Invalid Contest ID.");
+                redirectToHome();
+                return;
+            }
+            checkContestStatus(user, CONTEST_ID);
+        });
+
+        // 1. Check if user has already submitted for this specific contest
+        function checkContestStatus(user, contestId) {
+            
+            const statusDiv = document.getElementById('status-message');
+            
+            // पहले Draw Date और Contest Details लोड करें
+            getDBRef(`contests/${contestId}`).once('value').then(contestSnap => {
+                if (contestSnap.exists()) {
+                    const contestData = contestSnap.val();
+                    drawDate = new Date(contestData.drawTime).toLocaleDateString('en-IN', { 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                }
+                
+                // केवल इस contestId के COMPLETED submissions को लोड करें
+                return getDBRef('submissions')
+                    .orderByChild('contestId') 
+                    .equalTo(contestId)
+                    .once('value');
+
+            }).then(snapshot => {
+                
+                let alreadySubmitted = false;
+                snapshot.forEach(sub => {
+                    const submission = sub.val();
+                    // Client side par userId se filter karein aur check karein ki completed hai ya nahi
+                    if (submission.userId === user.uid && submission.isCompleted === true) {
+                        alreadySubmitted = true;
+                    }
+                });
+
+                if (alreadySubmitted) {
+                    // Already Submitted Logic
+                    statusDiv.innerHTML = `
+                        <h2><i class="fas fa-check-circle" style="color: #5cb85c;"></i> Already Joined!</h2>
+                        <p>आपने यह कॉन्टेस्ट पहले ही जॉइन कर लिया है।</p>
+                        <p>परिणाम की घोषणा <b style="color: #ff0000;">${drawDate}</b> को होगी।</p>
+                        <button onclick="redirectToHome()" style="background: #ff0000; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px;">Home पर वापस जाएँ</button>
+                    `;
+                    statusDiv.style.display = 'block';
+                } else {
+                    // Not Submitted - Load Questions and Show Confirmation
+                    console.log("User not submitted, loading questions...");
+                    loadRealQuestions(contestId, user); 
+                }
+            }).catch(error => {
+                console.error("Error checking status:", error);
+                // अगर कोई एरर आती है
+                document.getElementById('status-message').innerHTML = `
+                        <h2><i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> Error</h2>
+                        <p>कॉन्टेस्ट की स्थिति लोड करने में त्रुटि आई। कृपया बाद में प्रयास करें।</p>
+                        <button onclick="redirectToHome()" style="background: #ff0000; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px;">Home पर वापस जाएँ</button>
+                    `;
+                document.getElementById('status-message').style.display = 'block';
+            });
+        }
+    </script>
+</body>
+</html>
