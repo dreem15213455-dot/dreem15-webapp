@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dreem15 Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        /* Header */
+        .header {
+            background-color: #ff0000;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+        }
+
+        .header button {
+            background: white;
+            color: #ff0000;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            background-color: white;
+            border-bottom: 1px solid #ddd;
+            overflow-x: auto;
+        }
+
+        .nav-tab {
+            padding: 15px 20px;
+            cursor: pointer;
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab.active {
+            border-bottom-color: #ff0000;
+            color: #ff0000;
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+            padding: 20px;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* Cards and Forms */
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: #ff0000;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            margin-top: 10px; /* Adjust spacing */
+        }
+
+        .btn-primary:hover {
+            background: #cc0000;
+        }
+
+        .btn-secondary {
+            width: 48%; /* For half-width buttons */
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: #0056b3;
+        }
+        
+        /* Question Specific Styles */
+        .option-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+        .option-row input {
+            flex-grow: 1;
+        }
+        .option-row input[type="radio"] {
+            width: auto;
+        }
+        .option-row label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 0;
+            width: auto;
+        }
+
+
+        /* Dashboard Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            color: white;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        /* Specific Colors */
+        .stat-total-users { background: #007bff; }
+        .stat-total-deposit { background: #28a745; }
+        .stat-total-withdrawal { background: #dc3545; }
+        .stat-active-contests { background: #ffc107; color: #333;}
+        
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+        }
+
+        .data-table th, .data-table td {
+            border: 1px solid #eee;
+            padding: 12px 10px;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .data-table th {
+            background-color: #f8f8f8;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .action-btn {
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-right: 5px;
+            border: none; /* Added for clean look */
+        }
+
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-block-user {
+             background: #ffc107; /* Yellow */
+             color: #333;
+        }
+        .btn-unblock-user {
+             background: #007bff; /* Blue */
+             color: white;
+        }
+
+        .slider-preview {
+            width: 100px; 
+            height: 50px; 
+            object-fit: cover; 
+            margin-right: 10px;
+            border-radius: 3px;
+        }
+
+        .prize-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+            align-items: center;
+        }
+        .prize-row input {
+            flex-grow: 1;
+        }
+        .prize-row button {
+            width: 50px;
+            padding: 8px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+    
+    </head>
+<body>
+    <div id="loading-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; z-index: 1000;">
+        <h2>Loading Admin Panel...</h2>
+    </div>
+
+    <div id="admin-content" style="display: none;">
+        <div class="header">
+            <h1>Dreem15 Admin Panel</h1>
+            <button onclick="handleLogout()">Logout <i class="fas fa-sign-out-alt"></i></button>
+        </div>
+
+        <div class="nav-tabs">
+            <div class="nav-tab active" data-tab="dashboard">Dashboard</div>
+            <div class="nav-tab" data-tab="contests">Contests</div>
+            <div class="nav-tab" data-tab="questions">Questions</div> <div class="nav-tab" data-tab="users">Users</div>
+            <div class="nav-tab" data-tab="requests">Requests</div>
+            <div class="nav-tab" data-tab="settings">Settings</div>
+        </div>
+
+        <div id="dashboard" class="content-section active">
+            <h2>Dashboard Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-card stat-total-users">
+                    <h3 id="total-users">0</h3>
+                    <p>Total Users</p>
+                </div>
+                <div class="stat-card stat-total-deposit">
+                    <h3 id="total-deposit">₹0.00</h3>
+                    <p>Total Deposits (Verified)</p>
+                </div>
+                <div class="stat-card stat-total-withdrawal">
+                    <h3 id="total-withdrawal">₹0.00</h3>
+                    <p>Total Withdrawals (Verified)</p>
+                </div>
+                <div class="stat-card stat-active-contests">
+                    <h3 id="active-contests">0</h3>
+                    <p>Active Contests</p>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 20px;">
+                <h3>Recent Activity</h3>
+                <p>Latest deposit/withdrawal requests will be shown here.</p>
+            </div>
+        </div>
+
+        <div id="contests" class="content-section">
+            <h2>Create New Contest</h2>
+            <div class="card">
+                <form id="create-contest-form">
+                    <div class="form-group">
+                        <label for="contest-name">Contest Name</label>
+                        <input type="text" id="contest-name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="contest-type">कॉन्टेस्ट का प्रकार चुनें:</label>
+                        <select id="contest-type" class="form-control" required>
+                            <option value="free">💰 Free (निःशुल्क)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contest-prize">Total Prize Money (₹) <span style="font-weight: normal; color: gray;">(Sirf number daalein)</span></label>
+                        <input type="number" id="contest-prize" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contest-first-prize">1st Prize <span style="font-weight: normal; color: gray;">(Example: iPhone 15 Pro, ₹1000)</span></label>
+                        <input type="text" id="contest-first-prize" placeholder="Example: iPhone 15 Pro ya ₹1000" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contest-spots">Total Spots</label>
+                        <input type="number" id="contest-spots" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="contest-draw-date">Draw Date</label>
+                        <input type="date" id="contest-draw-date" required> 
+                    </div>
+                    <div class="form-group">
+                        <label for="contest-draw-time">Draw Time</label>
+                        <input type="time" id="contest-draw-time" required> 
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contest-image-url">Image URL (Optional)</label>
+                        <input type="url" id="contest-image-url" placeholder="Paste image link here">
+                    </div>
+                    
+                    <button type="button" class="btn-primary" id="create-contest-btn" onclick="createContest()">Create Contest</button>
+                </form>
+            </div>
+            
+            <h2>Set Contest Prize Structure 🏆</h2>
+            <div class="card">
+                <div class="form-group">
+                    <label for="contest-select-prize">Select Contest (Active/Inactive)</label>
+                    <select id="contest-select-prize" onchange="loadPrizeStructure()">
+                        <option value="">-- Select Contest --</option>
+                    </select>
+                </div>
+                
+                <form id="prize-setter-form">
+                    <div id="prize-rows-container">
+                        <div class="prize-row" data-rank="1">
+                            <label>Rank 1 Prize (₹)</label>
+                            <input type="number" class="prize-amount" placeholder="e.g., 500" required>
+                            <button type="button" onclick="removePrizeRow(1)" disabled style="background: #ccc;"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn-secondary" onclick="addPrizeRow()" style="margin-top: 15px; width: 100%;">Add Next Rank</button>
+                    <button type="button" class="btn-primary" onclick="setContestPrize()" style="margin-top: 15px;">Save Prize Structure</button>
+                </form>
+            </div>
+
+            <h2>Active Contests List</h2>
+            <div class="card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Spots</th>
+                            <th>Draw Time</th>
+                            <th>Actions</th>
+                            <th>Fill Status</th> </tr>
+                    </thead>
+                    <tbody id="contests-list">
+                        <tr><td colspan="5" style="text-align: center;">Loading contests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="questions" class="content-section">
+            <h2>Quiz Question Management</h2>
+            <div class="card">
+                <h3>Create New Question</h3>
+                <form id="create-question-form">
+                    <div class="form-group">
+                        <label for="question-contest-select">Select Contest</label>
+                        <select id="question-contest-select" required>
+                             <option value="">-- Select Contest --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="question-text">Question Text</label>
+                        <textarea id="question-text" rows="3" required placeholder="Question yahan daalein."></textarea>
+                    </div>
+                    
+                    <label style="margin-top: 10px; display: block;">Options and Correct Answer</label>
+                    <div id="options-container-form">
+                        <div class="option-row" data-option="1">
+                            <input type="text" class="option-input" placeholder="Option 1 Text" required>
+                            <label><input type="radio" name="correct-answer" value="1" required> Correct</label>
+                        </div>
+                        <div class="option-row" data-option="2">
+                            <input type="text" class="option-input" placeholder="Option 2 Text" required>
+                            <label><input type="radio" name="correct-answer" value="2" required> Correct</label>
+                        </div>
+                        <div class="option-row" data-option="3">
+                            <input type="text" class="option-input" placeholder="Option 3 Text" required>
+                            <label><input type="radio" name="correct-answer" value="3" required> Correct</label>
+                        </div>
+                        <div class="option-row" data-option="4">
+                            <input type="text" class="option-input" placeholder="Option 4 Text" required>
+                            <label><input type="radio" name="correct-answer" value="4" required> Correct</label>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn-primary" style="margin-top: 15px;" onclick="createQuestion()">Save Question</button>
+                </form>
+            </div>
+            
+            <h2>View Questions</h2>
+            <div class="card">
+                <div class="form-group">
+                    <label for="view-question-contest-select">Select Contest to View Questions</label>
+                    <select id="view-question-contest-select" onchange="loadQuestionsList()">
+                         <option value="">-- Select Contest --</option>
+                    </select>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Question</th>
+                            <th>Correct Answer</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="questions-list">
+                        <tr><td colspan="4" style="text-align: center;">Select a contest to view questions.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="users" class="content-section">
+            <h2>User Management</h2>
+            
+            <h2>User Wallet Control 💰</h2>
+            <div class="card">
+                <div class="form-group">
+                    <label for="user-search-input">Search User (Name/Email/ID)</label>
+                    <input type="text" id="user-search-input" placeholder="Type user name or email to search...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="user-select-dropdown">Select User</label>
+                    <select id="user-select-dropdown" onchange="displaySelectedUserBalance()">
+                        <option value="">-- Select User --</option>
+                    </select>
+                </div>
+
+                <div id="selected-user-info" style="margin-bottom: 15px; font-weight: bold;">
+                    Current Balance: ₹0.00 | ID: N/A
+                </div>
+
+                <form id="wallet-control-form">
+                    <input type="hidden" id="selected-user-id">
+                    <div class="form-group">
+                        <label for="wallet-amount">Amount (₹)</label>
+                        <input type="number" id="wallet-amount" placeholder="e.g., 100" required>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; gap: 10px;">
+                        <button type="button" class="btn-secondary" onclick="updateUserWallet('add')">Add Money</button>
+                        <button type="button" class="btn-primary" style="background: orange;" onclick="updateUserWallet('deduct')">Deduct Money</button>
+                    </div>
+                </form>
+            </div>
+            
+            <h2>All Users List</h2>
+            <div class="card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Balance</th>
+                            <th>Referral Code</th>
+                            <th>Joined</th>
+                            <th>Actions</th> </tr>
+                    </thead>
+                    <tbody id="users-list">
+                        <tr><td colspan="6" style="text-align: center;">Loading user data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="requests" class="content-section">
+            <h2>Deposit Requests (Verification)</h2>
+            <div class="card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Amount</th>
+                            <th>UTR/Txn ID</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deposit-requests-list">
+                        <tr><td colspan="5" style="text-align: center;">Loading deposit requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>Withdrawal Requests</h2>
+            <div class="card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Amount</th>
+                            <th>Bank/UPI Details</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="withdrawal-requests-list">
+                        <tr><td colspan="5" style="text-align: center;">Loading withdrawal requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="settings" class="content-section">
+            <h2>App Settings</h2>
+            <div class="card">
+                <h3>General Settings</h3>
+                <div class="form-group">
+                    <label for="setting-referral-bonus">Referral Bonus (₹)</label>
+                    <input type="number" id="setting-referral-bonus" placeholder="e.g., 50" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="setting-premium-fee">Premium English Course Fee (₹)</label>
+                    <input type="number" id="setting-premium-fee" placeholder="e.g., 999" required>
+                </div>
+
+                <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
+            </div>
+            
+            <div class="card" style="margin-top: 20px;">
+                <h3>Slider Management</h3>
+                <div class="form-group">
+                    <label for="slider-image-url">Slider Image URL</label>
+                    <input type="url" id="slider-image-url" placeholder="Paste image link here">
+                </div>
+                <div class="form-group">
+                    <label for="slider-text">Slider Text (Optional, if no image)</label>
+                    <input type="text" id="slider-text" placeholder="e.g., Big Prize Contest Today!">
+                </div>
+                <button class="btn-primary" onclick="addSlider()">Add New Slider</button>
+
+                <h4 style="margin-top: 20px;">Active Sliders</h4>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Preview</th>
+                            <th>Text/URL</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sliders-list">
+                        <tr><td colspan="3" style="text-align: center;">Loading sliders...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBAfmc3i3AT0YDR9DprPb9m1x8xvqT6Cn8",
+            authDomain: "iqlevale.firebaseapp.com",
+            databaseURL: "https://iqlevale-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "iqlevale",
+            storageBucket: "iqlevale.firebasestorage.app",
+            messagingSenderId: "313766803659",
+            appId: "1:313766803659:web:381f8588450a91f2c7834e"
+        };
+
+        // 🔑 1. DATA BASE PATH DEFINED
+        const BASE_DB_PATH = "dreem15_data/";
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+        
+        // Global variables to store user/contest data
+        let allUsersData = {};
+        let allContestsData = {};
+        
+        // Helper function to get the correct database reference path
+        function getDBRef(path) {
+            return database.ref(BASE_DB_PATH + path);
+        }
+
+        // --- Admin Access Control and Initialization ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const loadingScreen = document.getElementById('loading-screen');
+            const adminContent = document.getElementById('admin-content');
+            
+            auth.onAuthStateChanged((user) => {
+                
+                if (user) {
+                    // 🔑 2. ADMIN ACCESS CHECK (Using getDBRef for 'users' node)
+                    getDBRef('users/' + user.uid).once('value').then(userSnapshot => {
+                        const userData = userSnapshot.val();
+                        
+                        // Check if isAdmin flag is set (true or 'true')
+                        if (userData && (userData.isAdmin === true || userData.isAdmin === 'true')) { 
+                            loadingScreen.style.display = 'none';
+                            adminContent.style.display = 'block';
+                            initializeApp();
+                        } else {
+                            // User logged in but not an admin
+                            alert("Admin access denied. Your account is not marked as admin.");
+                            auth.signOut(); 
+                            window.location.href = 'index.html'; 
+                        }
+                    }).catch(error => {
+                        console.error("Error reading admin flag:", error);
+                        alert("Authentication error (Database Read Failed). Redirecting.");
+                        auth.signOut();
+                        window.location.href = 'index.html';
+                    });
+                } else {
+                    // Redirect logic if not logged in
+                    alert("Admin access denied. Redirecting to home.");
+                    window.location.href = 'index.html'; 
+                }
+            });
+        });
+
+        function initializeApp() {
+            setupNavTabs();
+            // Initial data loads
+            loadDashboardStats();
+            loadContestsList();
+            loadContestsForPrizeSetter(); 
+            loadContestsForQuestions(); 
+            loadUsersForControl(); 
+            loadUsersList(); 
+            loadRequests();
+            loadSettingsData();
+            loadSlidersList();
+            setupUserSearch(); 
+        }
+
+        // --- Navigation Logic ---
+        function setupNavTabs() {
+            const tabs = document.querySelectorAll('.nav-tab');
+            const sections = document.querySelectorAll('.content-section');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetTab = tab.getAttribute('data-tab');
+
+                    tabs.forEach(t => t.classList.remove('active'));
+                    sections.forEach(s => s.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+                    
+                    // Reload data on tab switch
+                    if (targetTab === 'contests') {
+                         loadContestsList();
+                         loadContestsForPrizeSetter();
+                    }
+                    if (targetTab === 'questions') { 
+                        loadContestsForQuestions();
+                        document.getElementById('view-question-contest-select').value = '';
+                        document.getElementById('questions-list').innerHTML = '<tr><td colspan="4" style="text-align: center;">Select a contest to view questions.</td></tr>';
+                    }
+                    if (targetTab === 'users') {
+                        loadUsersList();
+                        loadUsersForControl();
+                    }
+                    if (targetTab === 'requests') loadRequests();
+                    if (targetTab === 'settings') {
+                        loadSettingsData();
+                        loadSlidersList();
+                    }
+                });
+            });
+        }
+        
+        function handleLogout() {
+            auth.signOut().then(() => {
+                alert("Logged out successfully.");
+                window.location.href = 'index.html'; 
+            }).catch(error => {
+                console.error('Logout error:', error);
+            });
+        }
+
+        // --- Dashboard Data Loading (No changes needed here) ---
+        function loadDashboardStats() {
+            getDBRef('users').once('value').then(snapshot => {
+                document.getElementById('total-users').textContent = snapshot.numChildren();
+            });
+            
+            getDBRef('contests').once('value').then(snapshot => {
+                let activeCount = 0;
+                snapshot.forEach(childSnapshot => {
+                    if (childSnapshot.val().isActive === true || childSnapshot.val().isActive === 'true') {
+                        activeCount++;
+                    }
+                });
+                document.getElementById('active-contests').textContent = activeCount;
+            });
+            
+            // Load Total Deposits
+            getDBRef('depositRequests').once('value').then(snapshot => {
+                 let totalDeposit = 0;
+                 snapshot.forEach(childSnapshot => {
+                     const req = childSnapshot.val();
+                     // Only count approved/verified deposits for actual total funds
+                     if (req.status === 'Verified' || req.status === 'Approved') { 
+                         totalDeposit += (req.amount || 0);
+                     }
+                 });
+                 document.getElementById('total-deposit').textContent = `₹${totalDeposit.toFixed(2)}`;
+            });
+            
+            // Load Total Withdrawals
+            getDBRef('withdrawalRequests').once('value').then(snapshot => {
+                 let totalWithdrawal = 0;
+                 snapshot.forEach(childSnapshot => {
+                     const req = childSnapshot.val();
+                     // Only count approved withdrawals
+                     if (req.status === 'Verified' || req.status === 'Approved') { 
+                         totalWithdrawal += (req.amount || 0);
+                     }
+                 });
+                 document.getElementById('total-withdrawal').textContent = `₹${totalWithdrawal.toFixed(2)}`;
+            });
+        }
+
+        // --- CONTEST MANAGEMENT ---
+        
+        function createContest() {
+            const name = document.getElementById('contest-name').value;
+            const type = document.getElementById('contest-type').value; 
+            const prize = document.getElementById('contest-prize').value;
+            const firstPrize = document.getElementById('contest-first-prize').value; 
+            const spots = document.getElementById('contest-spots').value;
+            const imageUrl = document.getElementById('contest-image-url').value; 
+            const drawDate = document.getElementById('contest-draw-date').value; 
+            const drawTime = document.getElementById('contest-draw-time').value; 
+            
+            if (!name || !prize || !firstPrize || !spots || !drawDate || !drawTime) {
+                alert('Kripya contest ke sabhi fields bharein.');
+                return;
+            }
+
+            if (isNaN(parseFloat(prize)) || parseFloat(prize) <= 0) {
+                alert('Total Prize Money me kripya sahi number daalein (0 se zyada).');
+                return;
+            }
+            
+            const drawTimeISO = `${drawDate}T${drawTime}:00`; 
+            const drawTimeDate = new Date(drawTimeISO);
+
+            if (isNaN(drawTimeDate.getTime())) {
+                alert('Galat date ya time format. Kripya check karein.');
+                return;
+            }
+
+            const newContest = {
+                name: name,
+                type: type,
+                entryFee: 0, // Sabhi contests free hain
+                prize: parseFloat(prize),
+                firstPrize: firstPrize, 
+                spots: parseInt(spots),
+                image: imageUrl,
+                drawTime: drawTimeISO, 
+                drawTimestamp: drawTimeDate.getTime(),
+                spots_filled: 0, 
+                isActive: true, 
+                isFull: false, 
+                isManualFill: false, 
+                createdAt: new Date().toISOString()
+            };
+            
+            getDBRef('contests').push(newContest)
+                .then(() => {
+                    alert('Naya Contest successfully create ho gaya hai!');
+                    document.getElementById('create-contest-form').reset();
+                    loadContestsList(); 
+                    loadContestsForPrizeSetter(); 
+                    loadContestsForQuestions(); 
+                    loadDashboardStats(); 
+                })
+                .catch(error => {
+                    console.error("Error creating contest:", error);
+                    alert('Contest create karne mein error aaya: ' + error.message);
+                });
+        }
+        
+        function loadContestsList() {
+            const listBody = document.getElementById('contests-list');
+            listBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Loading contests...</td></tr>';
+
+            getDBRef('contests').on('value', (snapshot) => {
+                let html = '';
+                if (!snapshot.exists()) {
+                    listBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No contests found.</td></tr>';
+                    return;
+                }
+
+                snapshot.forEach(childSnapshot => {
+                    const contest = childSnapshot.val();
+                    const key = childSnapshot.key;
+                    
+                    const drawTimeDate = new Date(contest.drawTime);
+                    const drawTimeStr = isNaN(drawTimeDate.getTime()) ? 'N/A' : drawTimeDate.toLocaleString('en-IN');
+                    const prizeSet = contest.prizeStructure ? `<span style="color: green;">(${Object.keys(contest.prizeStructure).length} Ranks Set)</span>` : `<span style="color: red;">(Not Set)</span>`;
+                    
+                    const spotsFilled = contest.spots_filled || 0;
+                    const spotsTotal = contest.spots;
+                    const fillPercentage = (spotsFilled / spotsTotal) * 100;
+                    const fillStyle = fillPercentage >= 75 ? 'color: red; font-weight: bold;' : 'color: green;';
+                    
+                    const fillStatusText = contest.isManualFill 
+                                         ? `<span style="color: blue;">Manual Fill ON</span>` 
+                                         : `<span style="${fillStyle}">${spotsFilled}/${spotsTotal}</span>`;
+                                         
+                    const fillButtonText = contest.isManualFill ? 'Auto Fill' : 'Manual Fill';
+                    const isFullButtonText = contest.isFull ? 'Mark Not Full' : 'Mark Full';
+                    const isFullButtonColor = contest.isFull ? 'background: orange;' : 'background: #28a745;'; 
+                    
+                    const firstPrizeDisplay = contest.firstPrize || 'N/A';
+                    
+                    
+                    html += `
+                        <tr>
+                            <td>${contest.name} <br> <small>${firstPrizeDisplay}</small> ${prizeSet}</td>
+                            <td>${spotsFilled}/${spotsTotal}</td>
+                            <td>${drawTimeStr}</td>
+                            <td>
+                                <button class="action-btn btn-reject" onclick="toggleContestActive('${key}', ${contest.isActive})">
+                                    ${contest.isActive ? 'Deactivate' : 'Activate'}
+                                </button>
+                                <button class="action-btn btn-primary" style="width: auto; background: #dc3545;" onclick="deleteContest('${key}')">Delete</button> </td>
+                            <td>
+                                ${fillStatusText}
+                                <br>
+                                <button class="action-btn btn-secondary" style="width: auto; margin-top: 5px;" onclick="toggleContestManualFill('${key}', ${contest.isManualFill})">${fillButtonText}</button>
+                                <button class="action-btn btn-primary" style="width: auto; margin-top: 5px; ${isFullButtonColor}" onclick="toggleContestFull('${key}', ${contest.isFull})">${isFullButtonText}</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                listBody.innerHTML = html;
+            });
+        }
+        
+        function toggleContestManualFill(key, isManualFill) {
+            const newStatus = !isManualFill;
+            getDBRef('contests/' + key).update({ isManualFill: newStatus })
+                .then(() => {
+                    alert(`Contest manual fill status updated to ${newStatus ? 'ON' : 'OFF'}.`);
+                    loadContestsList(); 
+                })
+                .catch(error => console.error("Error updating manual fill status:", error));
+        }
+        
+        function toggleContestFull(key, isFull) {
+            const newStatus = !isFull;
+            const updateData = {
+                isFull: newStatus,
+            };
+            
+            if (newStatus) {
+                 const spotsTotal = allContestsData[key].spots;
+                 updateData.spots_filled = spotsTotal;
+            } else {
+                 updateData.spots_filled = 0; 
+            }
+
+            getDBRef('contests/' + key).update(updateData)
+                .then(() => {
+                    alert(`Contest successfully marked as ${newStatus ? 'FULL' : 'NOT FULL'}.`);
+                    loadContestsList(); 
+                })
+                .catch(error => console.error("Error updating full status:", error));
+        }
+
+        function toggleContestActive(key, isActive) {
+            const newStatus = !isActive;
+            getDBRef('contests/' + key).update({ isActive: newStatus })
+                .then(() => {
+                    alert(`Contest status updated to ${newStatus ? 'Active' : 'Inactive'}.`);
+                    loadDashboardStats(); 
+                })
+                .catch(error => console.error("Error updating status:", error));
+        }
+
+        function deleteContest(key) {
+            if (confirm("Are you sure you want to delete this contest?")) {
+                getDBRef('contests/' + key).remove()
+                    .then(() => {
+                        alert("Contest deleted.");
+                        loadDashboardStats(); 
+                    })
+                    .catch(error => console.error("Error deleting contest:", error));
+            }
+        }
+        
+        // --- CONTEST PRIZE SETTER (No changes needed here) ---
+        function loadContestsForPrizeSetter() {
+            const select = document.getElementById('contest-select-prize');
+            select.innerHTML = '<option value="">-- Select Contest --</option>';
+            allContestsData = {};
+
+            getDBRef('contests').once('value').then(snapshot => {
+                snapshot.forEach(childSnapshot => {
+                    const contest = childSnapshot.val();
+                    const key = childSnapshot.key;
+                    allContestsData[key] = contest; 
+                    
+                    const prizeSet = contest.prizeStructure ? ` (Prize Set)` : ` (Prize NOT Set)`;
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = `${contest.name} (Prize: ₹${(contest.prize || 0).toFixed(0)}) ${prizeSet}`;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function addPrizeRow() {
+            const container = document.getElementById('prize-rows-container');
+            const rank = container.children.length + 1;
+
+            const newRow = document.createElement('div');
+            newRow.className = 'prize-row';
+            newRow.setAttribute('data-rank', rank);
+            
+            const disableDelete = rank === 1 ? 'disabled style="background: #ccc;"' : '';
+            
+            newRow.innerHTML = `
+                <label>Rank ${rank} Prize (₹)</label>
+                <input type="number" class="prize-amount" placeholder="e.g., 500" required>
+                <button type="button" onclick="removePrizeRow(${rank})" ${disableDelete}><i class="fas fa-trash-alt"></i></button>
+            `;
+            container.appendChild(newRow);
+
+            let currentRank = 1;
+            container.querySelectorAll('.prize-row').forEach(row => {
+                row.setAttribute('data-rank', currentRank);
+                row.querySelector('label').textContent = `Rank ${currentRank} Prize (₹)`;
+                const deleteButton = row.querySelector('button');
+                deleteButton.setAttribute('onclick', `removePrizeRow(${currentRank})`);
+                
+                if (currentRank === 1) {
+                     deleteButton.setAttribute('disabled', 'true');
+                     deleteButton.style.background = '#ccc';
+                } else {
+                     deleteButton.removeAttribute('disabled');
+                     deleteButton.style.background = '#dc3545';
+                }
+                currentRank++;
+            });
+        }
+
+        function removePrizeRow(rankToRemove) {
+            const container = document.getElementById('prize-rows-container');
+            const rowToRemove = container.querySelector(`.prize-row[data-rank="${rankToRemove}"]`);
+            if (rowToRemove && rankToRemove !== 1) { 
+                rowToRemove.remove();
+                
+                let rank = 1;
+                container.querySelectorAll('.prize-row').forEach(row => {
+                    row.setAttribute('data-rank', rank);
+                    row.querySelector('label').textContent = `Rank ${rank} Prize (₹)`;
+                    const deleteButton = row.querySelector('button');
+                    deleteButton.setAttribute('onclick', `removePrizeRow(${rank})`);
+                    
+                    if (rank === 1) {
+                         deleteButton.setAttribute('disabled', 'true');
+                         deleteButton.style.background = '#ccc';
+                    } else {
+                         deleteButton.removeAttribute('disabled');
+                         deleteButton.style.background = '#dc3545';
+                    }
+                    rank++;
+                });
+            } else if (rankToRemove === 1) {
+                alert("Rank 1 ko delete nahi kiya ja sakta.");
+            }
+        }
+        
+        function loadPrizeStructure() {
+            const contestKey = document.getElementById('contest-select-prize').value;
+            const container = document.getElementById('prize-rows-container');
+            container.innerHTML = ''; 
+
+            if (!contestKey) {
+                addPrizeRow(); 
+                return;
+            }
+
+            const contest = allContestsData[contestKey];
+            const structure = contest.prizeStructure;
+
+            if (structure && Object.keys(structure).length > 0) {
+                Object.keys(structure).sort((a, b) => parseInt(a) - parseInt(b)).forEach(rankStr => {
+                    const rank = parseInt(rankStr);
+                    const amount = structure[rank];
+                    
+                    const newRow = document.createElement('div');
+                    newRow.className = 'prize-row';
+                    newRow.setAttribute('data-rank', rank);
+                    
+                    const disableDelete = rank === 1 ? 'disabled style="background: #ccc;"' : '';
+                    
+                    newRow.innerHTML = `
+                        <label>Rank ${rank} Prize (₹)</label>
+                        <input type="number" class="prize-amount" placeholder="e.g., 500" value="${amount}" required>
+                        <button type="button" onclick="removePrizeRow(${rank})" ${disableDelete}><i class="fas fa-trash-alt"></i></button>
+                    `;
+                    container.appendChild(newRow);
+                });
+            } else {
+                addPrizeRow(); 
+            }
+        }
+
+        function setContestPrize() {
+            const contestKey = document.getElementById('contest-select-prize').value;
+            if (!contestKey) {
+                alert("Kripya pehle contest select karein.");
+                return;
+            }
+            
+            const prizeStructure = {};
+            const rows = document.getElementById('prize-rows-container').querySelectorAll('.prize-row');
+            let totalPrizeSet = 0;
+            let isValid = true;
+
+            rows.forEach(row => {
+                const rank = parseInt(row.getAttribute('data-rank'));
+                const amount = parseFloat(row.querySelector('.prize-amount').value);
+                
+                if (isNaN(amount) || amount <= 0) {
+                    isValid = false;
+                    return;
+                }
+                
+                prizeStructure[rank] = amount;
+                totalPrizeSet += amount;
+            });
+            
+            if (!isValid) {
+                alert("Kripya sabhi ranks ke liye valid prize amount (greater than 0) daalein.");
+                return;
+            }
+
+            const totalContestPrize = allContestsData[contestKey].prize;
+            if (totalPrizeSet > totalContestPrize) {
+                 alert(`Warning: Aapne total ₹${totalPrizeSet.toFixed(2)} ka prize set kiya hai, jabki contest ka total prize ₹${totalContestPrize.toFixed(2)} hai। Kripya check karein।`);
+                 if (!confirm("Kya aap fir bhi is prize structure ko save karna chahte hain?")) return;
+            }
+
+            // Save to Firebase
+            getDBRef('contests/' + contestKey).update({ prizeStructure: prizeStructure })
+                .then(() => {
+                    alert('Contest Prize Structure successfully save ho gaya hai!');
+                    loadContestsList(); 
+                    loadContestsForPrizeSetter(); 
+                })
+                .catch(error => {
+                    console.error("Error setting prize structure:", error);
+                    alert("Prize structure save karne mein error aaya: " + error.message);
+                });
+        }
+        
+        // --- QUESTION MANAGEMENT (No changes needed here) ---
+        function loadContestsForQuestions() {
+            const selectCreate = document.getElementById('question-contest-select');
+            const selectView = document.getElementById('view-question-contest-select');
+            
+            selectCreate.innerHTML = '<option value="">-- Select Contest --</option>';
+            selectView.innerHTML = '<option value="">-- Select Contest --</option>';
+
+            Object.keys(allContestsData).forEach(key => {
+                 const contest = allContestsData[key];
+                 const option = document.createElement('option');
+                 option.value = key;
+                 option.textContent = `${contest.name} (Prize: ₹${(contest.prize || 0).toFixed(0)})`;
+                 
+                 const optionClone = option.cloneNode(true);
+                 
+                 selectCreate.appendChild(option);
+                 selectView.appendChild(optionClone);
+            });
+        }
+
+        function createQuestion() {
+            const contestKey = document.getElementById('question-contest-select').value;
+            const questionText = document.getElementById('question-text').value.trim();
+            const optionInputs = document.querySelectorAll('#options-container-form .option-input');
+            const correctAnswerIndex = document.querySelector('input[name="correct-answer"]:checked')?.value; 
+
+            if (!contestKey || !questionText || !correctAnswerIndex) {
+                alert("Kripya Contest, Question Text aur Correct Answer ko select karein.");
+                return;
+            }
+
+            const options = [];
+            let isValid = true;
+            optionInputs.forEach(input => {
+                if (input.value.trim() === '') {
+                    isValid = false;
+                }
+                options.push(input.value.trim());
+            });
+
+            if (!isValid) {
+                alert("Kripya sabhi options ke text bharein.");
+                return;
+            }
+            
+            const correctAnswer = options[parseInt(correctAnswerIndex) - 1]; 
+            
+            const newQuestion = {
+                question: questionText,
+                options: options,
+                answer: correctAnswer, 
+                createdAt: new Date().toISOString()
+            };
+            
+            getDBRef(`questions/${contestKey}`).push(newQuestion)
+                .then(() => {
+                    alert('Naya Question successfully create ho gaya hai!');
+                    document.getElementById('create-question-form').reset();
+                    document.querySelector(`input[name="correct-answer"][value="1"]`).checked = true;
+                    if(document.getElementById('view-question-contest-select').value === contestKey) {
+                        loadQuestionsList();
+                    }
+                })
+                .catch(error => {
+                    console.error("Error creating question:", error);
+                    alert('Question create karne mein error aaya: ' + error.message);
+                });
+        }
+
+        function loadQuestionsList() {
+            const contestKey = document.getElementById('view-question-contest-select').value;
+            const listBody = document.getElementById('questions-list');
+            listBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Loading questions...</td></tr>';
+
+            if (!contestKey) {
+                 listBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Select a contest to view questions.</td></tr>';
+                 return;
+            }
+
+            getDBRef(`questions/${contestKey}`).on('value', (snapshot) => {
+                let html = '';
+                if (!snapshot.exists()) {
+                    listBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No questions found for this contest.</td></tr>';
+                    return;
+                }
+                
+                let count = 0;
+                snapshot.forEach(childSnapshot => {
+                    const question = childSnapshot.val();
+                    const key = childSnapshot.key;
+                    count++;
+                    
+                    const correctAnswerText = question.answer || 'N/A';
+                    
+                    html += `
+                        <tr>
+                            <td>${count}</td>
+                            <td>${question.question.substring(0, 70) + (question.question.length > 70 ? '...' : '')}</td>
+                            <td><span style="color: green; font-weight: bold;">${correctAnswerText}</span></td>
+                            <td>
+                                <button class="action-btn btn-reject" style="width: auto;" onclick="deleteQuestion('${contestKey}', '${key}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                listBody.innerHTML = html;
+            });
+        }
+        
+        function deleteQuestion(contestKey, questionKey) {
+            if (confirm("Are you sure you want to delete this question?")) {
+                getDBRef(`questions/${contestKey}/${questionKey}`).remove()
+                    .then(() => {
+                        alert("Question deleted.");
+                    })
+                    .catch(error => console.error("Error deleting question:", error));
+            }
+        }
+        
+        // --- USER MANAGEMENT (No changes needed here) ---
+        function loadUsersList() {
+             const listBody = document.getElementById('users-list');
+             
+             if (Object.keys(allUsersData).length > 0) {
+                 renderUsersTable(allUsersData, listBody);
+                 return;
+             }
+
+             getDBRef('users').on('value', (snapshot) => {
+                 allUsersData = {}; 
+                 snapshot.forEach(child => {
+                    allUsersData[child.key] = child.val();
+                 });
+                 renderUsersTable(allUsersData, listBody);
+             });
+        }
+        
+        function renderUsersTable(users, listBody) {
+            let html = '';
+            if (Object.keys(users).length === 0) {
+                 listBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No users found.</td></tr>';
+                 return;
+            }
+
+            Object.keys(users).forEach(uid => {
+                 const user = users[uid];
+                 const joinedDate = user.joinedDate ? new Date(user.joinedDate).toLocaleDateString('en-IN') : 'N/A';
+                 const isBlocked = user.isBlocked === true || user.isBlocked === 'true';
+                 
+                 const statusBadge = isBlocked 
+                                     ? `<span style="color: white; background: red; padding: 2px 5px; border-radius: 3px;">Blocked</span>` 
+                                     : `<span style="color: white; background: green; padding: 2px 5px; border-radius: 3px;">Active</span>`;
+
+                 const actionButtons = isBlocked 
+                     ? `<button class="action-btn btn-unblock-user" onclick="unblockUser('${uid}', '${user.email}')">Unblock</button>`
+                     : `<button class="action-btn btn-block-user" onclick="blockUser('${uid}', '${user.email}')">Block</button>`;
+                     
+                 const deleteButton = `<button class="action-btn btn-reject" onclick="deleteUserPermanently('${uid}', '${user.email}')">Delete</button>`;
+
+
+                 html += `
+                     <tr>
+                         <td>${user.name || 'N/A'}</td>
+                         <td>${user.email}</td>
+                         <td>₹${(user.walletBalance || 0).toFixed(2)}</td>
+                         <td>${user.referralCode || 'N/A'}</td>
+                         <td>${joinedDate}</td>
+                         <td>
+                             ${actionButtons}
+                             ${deleteButton}
+                         </td>
+                     </tr>
+                 `;
+             });
+             listBody.innerHTML = html;
+        }
+
+        // --- USER WALLET CONTROL (No changes needed here) ---
+        function loadUsersForControl() {
+            allUsersData = {};
+            getDBRef('users').once('value').then(snapshot => {
+                const select = document.getElementById('user-select-dropdown');
+                select.innerHTML = '<option value="">-- Select User --</option>';
+
+                snapshot.forEach(childSnapshot => {
+                    const user = childSnapshot.val();
+                    const key = childSnapshot.key;
+                    allUsersData[key] = user; 
+                    
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = `${user.email} (${user.name || 'N/A'}) - Bal: ₹${(user.walletBalance || 0).toFixed(2)}`;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function setupUserSearch() {
+            const searchInput = document.getElementById('user-search-input');
+            const select = document.getElementById('user-select-dropdown');
+            
+            searchInput.addEventListener('input', () => {
+                const searchTerm = searchInput.value.toLowerCase();
+                select.innerHTML = '<option value="">-- Select User --</option>';
+                
+                Object.keys(allUsersData).forEach(key => {
+                    const user = allUsersData[key];
+                    const searchString = `${user.name || ''} ${user.email} ${key}`.toLowerCase();
+                    
+                    if (searchString.includes(searchTerm) && searchTerm.length > 0) {
+                         const option = document.createElement('option');
+                         option.value = key;
+                         option.textContent = `${user.email} (${user.name || 'N/A'}) - Bal: ₹${(user.walletBalance || 0).toFixed(2)}`;
+                         select.appendChild(option);
+                    }
+                });
+                if (searchTerm.length === 0) {
+                    loadUsersForControl(); 
+                }
+            });
+        }
+
+        function displaySelectedUserBalance() {
+            const userId = document.getElementById('user-select-dropdown').value;
+            const infoDiv = document.getElementById('selected-user-info');
+            const hiddenId = document.getElementById('selected-user-id');
+            
+            hiddenId.value = userId;
+
+            if (userId && allUsersData[userId]) {
+                const user = allUsersData[userId];
+                infoDiv.textContent = `Current Balance: ₹${(user.walletBalance || 0).toFixed(2)} | ID: ${userId}`;
+            } else {
+                infoDiv.textContent = 'Current Balance: ₹0.00 | ID: N/A';
+            }
+        }
+        
+        function updateUserWallet(action) {
+            const userId = document.getElementById('selected-user-id').value;
+            const amount = parseFloat(document.getElementById('wallet-amount').value);
+            
+            if (!userId || isNaN(amount) || amount <= 0) {
+                alert("Kripya ek user select karein aur valid amount (₹) daalein.");
+                return;
+            }
+            
+            const userRef = getDBRef('users/' + userId);
+            
+            userRef.child('walletBalance').transaction(currentBalance => {
+                const balance = currentBalance || 0; 
+                let newBalance;
+
+                if (action === 'add') {
+                    newBalance = balance + amount;
+                } else if (action === 'deduct') {
+                    if (balance < amount) {
+                        alert(`Deduction failed. User ke paas sirf ₹${balance.toFixed(2)} है।`);
+                        return; 
+                    }
+                    newBalance = balance - amount;
+                } else {
+                    return;
+                }
+
+                return newBalance;
+            }, (error, committed, snapshot) => {
+                if (error) {
+                    console.error("Transaction failed: ", error);
+                    alert("Transaction failed: " + error.message);
+                } else if (!committed) {
+                    return; 
+                } else {
+                    const user = snapshot.val();
+                    alert(`Wallet successfully ${action === 'add' ? 'added' : 'deducted'} by ₹${amount}. New Balance: ₹${(user.walletBalance || 0).toFixed(2)}`);
+                    document.getElementById('wallet-control-form').reset();
+                    loadUsersForControl(); 
+                    displaySelectedUserBalance();
+                    loadUsersList();
+                }
+            });
+        }
+        
+        // --- REQUESTS MANAGEMENT (FIXED WITHDRAWAL APPROVAL) ---
+        function loadRequests() {
+            const depositBody = document.getElementById('deposit-requests-list');
+            const withdrawalBody = document.getElementById('withdrawal-requests-list');
+            
+            // Deposit Requests
+            getDBRef('depositRequests').orderByChild('status').equalTo('Pending').on('value', (snapshot) => {
+                let html = '';
+                if (!snapshot.exists()) {
+                    depositBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No pending deposit requests.</td></tr>';
+                } else {
+                    snapshot.forEach(childSnapshot => {
+                        const req = childSnapshot.val();
+                        const key = childSnapshot.key;
+                        
+                        const userEmail = allUsersData[req.userId] ? allUsersData[req.userId].email : (req.email || req.userId || 'N/A');
+
+                        html += `
+                            <tr>
+                                <td>${userEmail}</td>
+                                <td>₹${(req.amount || 0).toFixed(2)}</td>
+                                <td>${req.utr}</td>
+                                <td><span style="color: orange;">${req.status}</span></td>
+                                <td>
+                                    <button class="action-btn btn-approve" onclick="approveDeposit('${key}', '${req.userId}', ${req.amount})">Approve</button>
+                                    <button class="action-btn btn-reject" onclick="rejectRequest('depositRequests', '${key}')">Reject</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    depositBody.innerHTML = html;
+                }
+            });
+
+            // Withdrawal Requests
+            getDBRef('withdrawalRequests').orderByChild('status').equalTo('Pending').on('value', (snapshot) => {
+                let html = '';
+                if (!snapshot.exists()) {
+                    withdrawalBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No pending withdrawal requests.</td></tr>';
+                } else {
+                    snapshot.forEach(childSnapshot => {
+                        const req = childSnapshot.val();
+                        const key = childSnapshot.key;
+                        
+                        const userEmail = allUsersData[req.userId] ? allUsersData[req.userId].email : (req.email || req.userId || 'N/A');
+
+                        let bankDetails;
+                        if (req.upiId) {
+                            bankDetails = `UPI: ${req.upiId}`;
+                        } else if (req.accountNumber && req.ifsc) {
+                             bankDetails = `${req.bankName || 'Bank'} (${req.ifsc}) - Acc: ${req.accountNumber}`;
+                        } else {
+                            bankDetails = 'Incomplete Details';
+                        }
+
+                        html += `
+                            <tr>
+                                <td>${userEmail}</td>
+                                <td>₹${(req.amount || 0).toFixed(2)}</td>
+                                <td>${bankDetails}</td>
+                                <td><span style="color: orange;">${req.status}</span></td>
+                                <td>
+                                    <button class="action-btn btn-approve" onclick="approveWithdrawal('${key}')">Approve</button>
+                                    <button class="action-btn btn-reject" onclick="rejectWithdrawal('${key}', '${req.userId}', ${req.amount})">Reject & Refund</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    withdrawalBody.innerHTML = html;
+                }
+            });
+        }
+
+        function approveDeposit(key, userId, amount) {
+            if (!confirm(`Confirm approval of ₹${amount} deposit for ${userId}?`)) return;
+
+            getDBRef('depositRequests/' + key).update({ status: 'Verified', verifiedAt: new Date().toISOString() })
+                .then(() => {
+                    const userRef = getDBRef('users/' + userId);
+                    return userRef.child('walletBalance').transaction(currentBalance => {
+                        return (currentBalance || 0) + amount;
+                    });
+                })
+                .then(() => {
+                    alert(`Deposit approved and ₹${amount} added to user's wallet.`);
+                    loadUsersForControl(); 
+                    loadDashboardStats(); 
+                })
+                .catch(error => {
+                    console.error("Error in deposit approval transaction:", error);
+                    alert("Approval fail ho gaya. Kripya manual check karein।");
+                });
+        }
+
+        // ⭐ FIXED: Withdrawal approval with balance deduction
+        function approveWithdrawal(key) {
+            if (!confirm("Confirm approval of this withdrawal request? (Funds transfer required manually)")) return;
+            
+            // Pehle withdrawal request ka data get karo
+            getDBRef('withdrawalRequests/' + key).once('value').then(snapshot => {
+                const withdrawalData = snapshot.val();
+                const userId = withdrawalData.userId;
+                const amount = withdrawalData.amount;
+
+                if (!userId || !amount) {
+                    alert("Error: Withdrawal data incomplete.");
+                    return;
+                }
+
+                // 1. Withdrawal status update karo
+                return getDBRef('withdrawalRequests/' + key).update({ 
+                    status: 'Verified', 
+                    verifiedAt: new Date().toISOString() 
+                }).then(() => {
+                    // 2. User ka balance deduct karo
+                    const userRef = getDBRef('users/' + userId);
+                    return userRef.child('walletBalance').transaction((currentBalance) => {
+                        const balance = currentBalance || 0;
+                        
+                        // Balance check karo
+                        if (balance < amount) {
+                            throw new Error("Insufficient balance for withdrawal");
+                        }
+                        
+                        // Balance deduct karo
+                        return balance - amount;
+                    });
+                });
+            })
+            .then(() => {
+                alert("Withdrawal request approved and balance deducted from user's wallet.");
+                loadDashboardStats(); 
+                loadUsersForControl(); // User list refresh karo
+            })
+            .catch((error) => {
+                console.error("Error in withdrawal approval:", error);
+                alert("Withdrawal approval failed: " + error.message);
+            });
+        }
+
+        function rejectWithdrawal(key, userId, amount) {
+            if (!confirm(`Are you sure you want to REJECT this withdrawal? The deducted amount of ₹${amount} will be REFUNDED to the user's wallet.`)) return;
+
+            getDBRef('withdrawalRequests/' + key).update({ status: 'Rejected', rejectedAt: new Date().toISOString() })
+                .then(() => {
+                    const userRef = getDBRef('users/' + userId);
+                    return userRef.child('walletBalance').transaction(currentBalance => {
+                        const balance = currentBalance || 0;
+                        return balance + amount; 
+                    });
+                })
+                .then(() => {
+                    alert(`Withdrawal request rejected and ₹${amount} successfully REFUNDED to the user's wallet.`);
+                    loadUsersForControl(); 
+                    loadDashboardStats(); 
+                })
+                .catch(error => {
+                    console.error("Error in withdrawal rejection/refund transaction:", error);
+                    alert("Rejection/Refund fail ho gaya. Kripya manual check karein।");
+                });
+        }
+
+        function rejectRequest(type, key) {
+            if (!confirm(`Are you sure you want to reject this request?`)) return;
+
+            getDBRef(type + '/' + key).update({ status: 'Rejected', rejectedAt: new Date().toISOString() })
+                .then(() => alert("Request rejected."))
+                .catch(error => console.error("Error rejecting request:", error));
+        }
+        
+        // --- SETTINGS MANAGEMENT ---
+        function loadSettingsData() {
+            getDBRef('settings').once('value').then(snapshot => {
+                const settings = snapshot.val();
+                if (settings) {
+                    document.getElementById('setting-referral-bonus').value = settings.referralBonus || 50;
+                    document.getElementById('setting-premium-fee').value = settings.premiumCourseFee || 0;
+                }
+            }).catch(error => {
+                console.error("Error loading settings:", error);
+            });
+        }
+        
+        function saveSettings() {
+            const referralBonus = parseInt(document.getElementById('setting-referral-bonus').value);
+            const premiumCourseFee = parseFloat(document.getElementById('setting-premium-fee').value);
+
+            if (isNaN(referralBonus) || referralBonus < 0 || isNaN(premiumCourseFee) || premiumCourseFee < 0) {
+                alert("Kripya sahi number daalein (Referral Bonus and Course Fee)।");
+                return;
+            }
+
+            getDBRef('settings').set({
+                referralBonus: referralBonus,
+                premiumCourseFee: premiumCourseFee,
+                updatedAt: new Date().toISOString()
+            })
+            .then(() => alert("Settings successfully saved!"))
+            .catch(error => {
+                console.error("Error saving settings:", error);
+                alert("Settings save karne mein error aaya।");
+            });
+        }
+
+        // --- SLIDER MANAGEMENT FUNCTIONS (No changes needed here) ---
+        function addSlider() {
+            const imageUrl = document.getElementById('slider-image-url').value.trim();
+            const text = document.getElementById('slider-text').value.trim();
+
+            if (!imageUrl && !text) {
+                alert("Kripya Slider Image URL ya Slider Text daalein.");
+                return;
+            }
+
+            const newSlider = {
+                imageUrl: imageUrl,
+                text: text,
+                createdAt: new Date().toISOString()
+            };
+
+            getDBRef('sliders').push(newSlider)
+                .then(() => {
+                    alert('Slider successfully added!');
+                    document.getElementById('slider-image-url').value = '';
+                    document.getElementById('slider-text').value = '';
+                    loadSlidersList(); 
+                })
+                .catch(error => {
+                    console.error("Error adding slider:", error);
+                    alert("Slider add karne mein error aaya।");
+                });
+        }
+
+        function loadSlidersList() {
+            const listBody = document.getElementById('sliders-list');
+            listBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Loading sliders...</td></tr>';
+
+            getDBRef('sliders').on('value', (snapshot) => {
+                let html = '';
+                if (!snapshot.exists()) {
+                    listBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No sliders found.</td></tr>';
+                    return;
+                }
+
+                snapshot.forEach(childSnapshot => {
+                    const slider = childSnapshot.val();
+                    const key = childSnapshot.key;
+                    
+                    const preview = slider.imageUrl 
+                        ? `<img src="${slider.imageUrl}" alt="Slider Preview" class="slider-preview">` 
+                        : '<i class="fas fa-font" style="font-size: 24px;"></i>';
+                    
+                    const content = slider.imageUrl 
+                        ? slider.imageUrl.substring(0, 50) + '...'
+                        : (slider.text ? slider.text.substring(0, 50) + '...' : 'N/A');
+
+                    html += `
+                        <tr>
+                            <td style="display: flex; align-items: center;">${preview}</td>
+                            <td>${content}</td>
+                            <td>
+                                <button class="action-btn btn-reject" style="width: auto;" onclick="deleteSlider('${key}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                listBody.innerHTML = html;
+            });
+        }
+
+        function deleteSlider(key) {
+            if (confirm("Are you sure you want to delete this slider?")) {
+                getDBRef('sliders/' + key).remove()
+                    .then(() => alert("Slider deleted."))
+                    .catch(error => console.error("Error deleting slider:", error));
+            }
+        }
+        
+        // --- USER BLOCKING/DELETION FUNCTIONS (No changes needed here) ---
+        function blockUser(userId, userEmail) {
+            if (!confirm(`क्या आप वाकई यूज़र ${userEmail} को ब्लॉक करना चाहते हैं?`)) {
+                return; 
+            }
+
+            const userRef = getDBRef('users/' + userId);
+
+            userRef.update({
+                isBlocked: true,
+                blockedAt: firebase.database.ServerValue.TIMESTAMP
+            })
+            .then(() => {
+                alert(`यूज़र ${userEmail} सफलतापूर्वक ब्लॉक हो गया है।`);
+                loadUsersList(); 
+            })
+            .catch(error => {
+                alert("यूज़र को ब्लॉक करने में एरर आया: " + error.message);
+                console.error("Blocking error:", error);
+            });
+        }
+
+        function unblockUser(userId, userEmail) {
+            if (!confirm(`क्या आप वाकई यूज़र ${userEmail} को अनब्लॉक करना चाहते हैं?`)) {
+                return; 
+            }
+
+            const userRef = getDBRef('users/' + userId);
+
+            userRef.update({
+                isBlocked: null 
+            })
+            .then(() => {
+                alert(`यूज़र ${userEmail} सफलतापूर्वक अनब्लॉक हो गया है।`);
+                loadUsersList(); 
+            })
+            .catch(error => {
+                alert("यूज़र को अनब्लॉक करने में एरर आया: " + error.message);
+            });
+        }
+        
+        function deleteUserPermanently(userId, userEmail) {
+             if (!confirm(`🚨 DANGER: क्या आप वाकई यूज़र ${userEmail} को हमेशा के लिए DELETE करना चाहते हैं? यह डेटा वापस नहीं मिलेगा! (यह केवल Realtime Database से डेटा हटाएगा, Auth से हटाने के लिए Cloud Function चाहिए।)`)) {
+                return; 
+             }
+             
+             getDBRef('users/' + userId).remove()
+                .then(() => {
+                    alert(`यूज़र ${userEmail} का डेटा Realtime Database से हटा दिया गया है।`);
+                    loadUsersList(); 
+                    loadUsersForControl();
+                })
+                .catch(error => {
+                    alert("डिलीट करने में एरर आया: " + error.message);
+                    console.error("Deletion error:", error);
+                });
+        }
+
+    </script>
+</body>
+</html>
