@@ -1,0 +1,22 @@
+{
+  "name": "Dreem15 Sapno Ki Udaan",
+  "short_name": "Dreem15",
+  "description": "Dreem15 Quiz Contest aur Prizes jeetne ka behtareen platform.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff", 
+  "theme_color": "#ff0000",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/Zqy7s0ys/1000232107.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.postimg.cc/Y0XzCwW1/file-00000000e194622fa8aa89544367d98f.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
